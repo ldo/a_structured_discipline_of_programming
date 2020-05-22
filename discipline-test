@@ -18,20 +18,21 @@ import sys
 import weakref
 import discipline # built from accompanying discipline.c
 
-class WeakStr :
-    "wrapper around str just so I can have weakrefs to instances."
+class WeakObj :
+    "wrapper around some other Python object type just so" \
+    " I can have weakrefs to instances."
 
-    def __init__(self, str) :
-        self.str = str
+    def __init__(self, obj) :
+        self.obj = obj
     #end __init__
 
     def __repr__(self) :
-        "make it look like a str."
+        "make it look like an obj."
         return \
-            repr(self.str)
+            repr(self.obj)
     #end __repr__
 
-#end WeakStr
+#end WeakObj
 
 def make_weakrefs(items) :
     flattened = set([i[0] for i in items] + [i[1] for i in items])
@@ -46,12 +47,13 @@ def make_weakrefs(items) :
 sys.stdout.write("* Case 1\n")
 items = \
     (
-        (WeakStr("key1a"), WeakStr("value1a")),
-        (WeakStr("key2a"), WeakStr("value2a")),
+        (WeakObj("key1a"), WeakObj("value1a")),
+        (WeakObj("key2a"), WeakObj("value2a")),
     )
 remaining, residue = make_weakrefs(items)
 sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
 result = discipline.makedict(items)
+remaining.add(WeakObj(result))
 result = None
 items = None
 sys.stdout.write("after: len(weakset) = %d (should be %d)\n" % (len(remaining), residue))
@@ -59,10 +61,10 @@ sys.stdout.write("after: len(weakset) = %d (should be %d)\n" % (len(remaining), 
 sys.stdout.write("* Case 2\n")
 items = \
     (
-        (WeakStr("key1b"), WeakStr("value1b")),
-        (WeakStr("key2b"), discipline.ExceptMe),
-        #(discipline.ExceptMe, WeakStr("value2b")),
-        (WeakStr("key3b"), WeakStr("value3b")),
+        (WeakObj("key1b"), WeakObj("value1b")),
+        (WeakObj("key2b"), discipline.ExceptMe),
+        #(discipline.ExceptMe, WeakObj("value2b")),
+        (WeakObj("key3b"), WeakObj("value3b")),
     )
 remaining, residue = make_weakrefs(items)
 sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
@@ -71,6 +73,8 @@ try :
 except ValueError as gotcha :
     sys.stdout.write("Exception %s\n" % repr(gotcha))
     result = None
+else :
+    remaining.add(WeakObj(result))
 #end try
 result = None
 items = None
