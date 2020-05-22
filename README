@@ -36,18 +36,25 @@ In more concrete terms, the code pattern looks like this:
     while (false);
     Py_XDECREF(obj); /* step 3 */
 
-Assuming there are no gotos in the “...” parts, it should be clear
-that, regardless of what happens in those parts (provided they don’t
-free or reallocate `obj`), any memory allocated to `obj` will be correctly
-freed.
+Assuming there are no gotos in the “...” parts (or shenanigans like
+`setjmp`(3)/`longjmp`(3)), it should be clear that, regardless of what
+happens in those parts (provided they don’t free or reallocate `obj`),
+any memory allocated to `obj` will be correctly freed.
 
-Key to this pattern is the fact that `Py_XDECREF` is a noop if it is
-passed a `NULL` pointer. This is also the semantics of the `free`(3)
-routine in the C standard library, and I recommend that any
-memory-disposal routine you create implement the same behaviour. It
-saves checking for unallocated storage in the cleanup code: just
-unconditionally dispose of everything temporary that might have been
-allocated.
+Key to this pattern is the fact that `Py_XDECREF` is a noop (and
+raises no error) if it is passed a `NULL` pointer. This is also the
+semantics of the `free`(3) routine in the C standard library, and I
+recommend that any memory-disposal routine you create implement the
+same behaviour. It saves checking for unallocated storage in the
+cleanup code: just unconditionally dispose of everything temporary
+that might have been allocated.
+
+The pattern can also be applied to managing other resources besides
+memory: for example, open file descriptors. Unfortunately, the POSIX
+standard `close`(2) routine is not a noop if passed a descriptor
+representing an unopened file (e.g. -1), since it flags the `EBADF`
+error in this situation. So it needs to be wrapped in a routine that
+implements the correct behaviour.
 
 There is an old concept called a “Nassi-Shneiderman diagram”. This is
 a representation of part of your program code as a block that can be
@@ -226,4 +233,4 @@ Most of these situations are illustrated further by actual, working
 code in the accompanying example.
 
 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
-2020 May 22
+2020 May 23
