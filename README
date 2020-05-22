@@ -1,0 +1,229 @@
+# A Structured Discipline Of Programming #
+
+Programming is tricky in many ways: one of them is correctly managing
+dynamic memory allocation. We frequently hear of various kinds of
+memory-related bugs in code, such as
+
+  * Leaking memory: allocating something and forgetting to dispose of it
+  * Double-free: the opposite problem, trying to free a memory block that has already been freed
+  * Buffer overruns: accessing memory you haven’t allocated.
+
+This project doesn’t (directly) address the last one, but it will look
+at the first two. My aim is to offer a basic programming pattern,
+consisting of three parts:
+
+  1: Initialize a pointer variable to NULL
+  2: Allocate memory for the pointer (this might fail)
+  3: Correctly free the pointer memory, regardless of allocation success/failure
+
+This project uses the implementation of a Python extension module as a
+specific example, since Python itself is a highly dynamic language,
+and so code that is written in a lower-level-language like C for
+interfacing to Python typically has to deal a lot with allocation and
+management of Python objects and other dynamic memory.
+
+In more concrete terms, the code pattern looks like this:
+
+    PyObject * obj = NULL; /* step 1 */
+    do /*once*/
+      {
+        ... possible other stuff ...
+        allocate obj; /* step 2 */
+        if (PyErr_Occurred())
+            break;
+        ... possible other stuff using obj ...
+      }
+    while (false);
+    Py_XDECREF(obj); /* step 3 */
+
+Assuming there are no gotos in the “...” parts, it should be clear
+that, regardless of what happens in those parts (provided they don’t
+free or reallocate obj), any memory allocated to obj will be correctly
+freed.
+
+Key to this pattern is the fact that Py_XDECREF is a noop if it is
+passed a NULL pointer. This is also the semantics of the free(3)
+routine in the C standard library, and I recommend that any
+memory-disposal routine you create implement the same behaviour. It
+saves checking for unallocated storage in the cleanup code: just
+unconditionally dispose of everything temporary that might have been
+allocated.
+
+There is an old concept called a “Nassi-Shneiderman diagram”. This is
+a representation of part of your program code as a block that can be
+nested in other such blocks, or concatenated with other blocks.
+However, the nesting and concatenating only works if there are no
+gotos present.
+
+The above basic structure scales easily. For example, coping with
+multiple objects needing allocating:
+
+    PyObject * obj1 = NULL;
+    PyObject * obj2 = NULL;
+    do /*once*/
+      {
+        ... possible other stuff ...
+        allocate obj1;
+        if (PyErr_Occurred())
+            break;
+        ... possible other stuff using obj1 ...
+        allocate obj2;
+        if (PyErr_Occurred())
+            break;
+        ... possible other stuff using obj1 and obj2 ...
+      }
+    while (false);
+    Py_XDECREF(obj1);
+    Py_XDECREF(obj2);
+
+Nested blocks:
+
+    PyObject * obj1 = NULL;
+    do /*once*/
+      {
+        ... possible other stuff ...
+        allocate obj1;
+        if (PyErr_Occurred())
+            break;
+        ... possible other stuff using obj1 ...
+          {
+            PyObject * obj2 = NULL;
+            do /*once*/
+              {
+                ... even more possible stuff using obj1 ...
+                allocate obj2;
+                if (PyErr_Occurred())
+                    break;
+                ... possible other stuff using obj1 and obj2 ...
+              }
+            while (false);
+            Py_XDECREF(obj2);
+          }
+        if (PyErr_Occurred())
+            break;
+        ... yet more possible stuff using obj1 ...
+      }
+    while (false);
+    Py_XDECREF(obj1);
+
+Notice where the PyErr_Occurred() checks need to be done.
+Because there are no gotos, it is easy to satisfy yourself that
+every possible control path out of the inner structure will pass
+through the cleanup code on its way back into the outer structure.
+
+What about a function returning a dynamically-allocated result? Here I
+like to have two separate pointer variables, one to hold the object
+while it is being constructed, ownership of the object being passed to
+the other when, and only when, construction has been completed
+successfully. This just seems the simplest way. Example:
+
+    PyObject * make_obj
+      (
+        PyObject * self,
+        PyObject * args
+      )
+      {
+        PyObject * result = NULL;
+        PyObject * tempresult = NULL;
+        ... maybe other initialization code ...
+        do /*once*/
+          {
+            ... some code ...
+            allocate tempresult;
+            if (PyErr_Occurred())
+                break;
+            ... more code, further construction of tempresult ...
+          /* all done */
+            result = tempresult;
+            tempresult = NULL; /* so I don’t dispose of it yet */
+          }
+        while (false);
+        ... maybe other cleanup ...
+        Py_XDECREF(tempresult);
+        return
+            result;
+      } /*make_obj*/
+
+As you can see, disposal of the (partially-constructed) result object
+happens only on error (in which case the function returns NULL, as
+expected by Python); if no error occurs, then the result object is not
+disposed, but is passed back to Python instead.
+
+A more complex situation occurs with allocation inside a loop. If you
+thought you could easily rewrite the previous cases with gotos, have a
+careful look at this. Example: process items in an input tuple, and
+create entries in an output dict.
+
+    PyObject * result = NULL;
+    PyObject * tempresult = NULL;
+    do /*once*/
+      {
+        if (not PyTuple_Check(items))
+          {
+            PyErr_SetString(PyExc_TypeError, "expecting a tuple");
+            break;
+          } /*if*/
+        const ssize_t nr_items = PyTuple_Size(items);
+        if (PyErr_Occurred())
+            break;
+        tempresult = PyDict_New();
+        if (tempresult == NULL)
+            break;
+        for (ssize_t i = 0;;)
+          {
+            if (i == nr_items)
+                break;
+            PyObject * const item = PyTuple_GetItem(items, i);
+            if (item == NULL)
+                break;
+              {
+                PyObject * key = NULL;
+                PyObject * value = NULL;
+                do /*once*/
+                  {
+                    ... construct key ...
+                    if (PyErr_Occurred())
+                        break;
+                    ... construct value ...
+                    if (PyErr_Occurred())
+                        break;
+                    if (PyDict_SetItem(tempresult, key, value) < 0)
+                        break;
+                  }
+                while (false);
+                Py_XDECREF(key);
+                Py_XDECREF(value);
+              }
+            if (PyErr_Occurred())
+                break;
+            ++i;
+          } /*for*/
+        if (PyErr_Occurred())
+            break;
+      /* all done */
+        result = tempresult;
+        tempresult = NULL; /* so I don’t dispose of it yet */
+      }
+    while (false);
+    Py_XDECREF(tempresult);
+    ... return result ...
+
+Notice in the for-loop, I don’t bother putting any of the exit
+conditions in the header. Since there are multiple exits, it makes no
+sense to me to promote one in a special way like this: instead, the
+fact that there is no exit condition in the header should prompt the
+reader to check through the entire body for break-statements.
+
+Also, it may seem redundant to have the last statement in the body of
+a do-once do a check for error and break, since the next thing that
+will happen is leaving the block anyway. But it doesn’t hurt. Also I
+keep thinking that in some future change I might add some more code
+after that point, and now the break is no longer redundant, and
+I might forget to ensure it was there. This way, it’s just one less
+thing to think about.
+
+Most of these situations are illustrated further by actual, working
+code in the accompanying example.
+
+Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
+2020 May 22
