@@ -1,5 +1,6 @@
-# This Makefile is now used for testing only.
+# Build discipline extension module.
 
+# may need to fix PYTHONVER as needed for newer/older Python
 PYTHONVER=python3.8
 CFLAGS=-g -I/usr/include/${PYTHONVER} -fPIC -Wall -Wno-parentheses
 
@@ -9,6 +10,6 @@ discipline.so : discipline.o
 discipline.o : discipline.c
 
 clean :
-	rm -rf discipline.so discipline.o build/ __pycache__/
+	rm -f discipline.so discipline.o
 
 .PHONY : clean
