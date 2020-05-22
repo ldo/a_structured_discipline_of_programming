@@ -1,8 +1,12 @@
 #!/usr/bin/python3
 #+
 # This script exercises the discipline.c extension module,
-# demonstrating the error-recovery techniques implemented
-# therein.
+# demonstrating the error-recovery techniques implemented therein.
+# Each exercise collects weak references to elements of a Python
+# structure before passing it to a C method. After trapping any raised
+# exception, references to the structure and returned result are
+# nulled out, and then the weak references are checked to ensure that
+# all the ones that should have disappeared have indeed done so.
 #
 # Copyright 2020 by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 # This code is licensed CC0
@@ -12,7 +16,7 @@
 
 import sys
 import weakref
-import discipline
+import discipline # built from accompanying discipline.c
 
 class WeakStr :
     "wrapper around str just so I can have weakrefs to instances."
@@ -36,8 +40,8 @@ def make_weakrefs(items) :
         weakref.WeakSet(flattened), residue
 #end make_weakrefs
 
-# Note: trying to refactor following in a loop doesn’t work--
-# references to objects don’t go away immediately!
+# Note: trying to refactor following repeated code into a loop doesn’t
+# work -- references to objects don’t go away immediately!
 
 sys.stdout.write("* Case 1\n")
 items = \
