@@ -62,9 +62,7 @@ static PyObject * discipline_makedict
         Py_XINCREF(items);
         if (not parsed_ok)
             break;
-        fputs("makedict says: ", stdout);
-        fputs(msg, stdout);
-        fputs("\n", stdout);
+        fprintf(stdout, "makedict says: “%s”\n", msg);
         if (not PyTuple_Check(items))
           {
             PyErr_SetString(PyExc_TypeError, "expecting a tuple");
