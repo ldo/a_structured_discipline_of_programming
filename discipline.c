@@ -10,6 +10,7 @@
 */
 
 #include <iso646.h>
+#include <stdio.h>
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdbool.h>
@@ -48,9 +49,10 @@ static PyObject * discipline_makedict
     PyObject * result = NULL;
     PyObject * tempresult = NULL;
     PyObject * items = NULL;
+    const char * msg = NULL;
     do /*once*/
       {
-        const bool parsed_ok = PyArg_ParseTuple(args, "O", &items);
+        const bool parsed_ok = PyArg_ParseTuple(args, "Os", &items, &msg);
       /* Grab references to possible partial results from PyArg_Parse routine
         before checking for parse error.
         Strictly, I don’t need to keep my own references to individual arguments,
@@ -60,6 +62,9 @@ static PyObject * discipline_makedict
         Py_XINCREF(items);
         if (not parsed_ok)
             break;
+        fputs("makedict says: ", stdout);
+        fputs(msg, stdout);
+        fputs("\n", stdout);
         if (not PyTuple_Check(items))
           {
             PyErr_SetString(PyExc_TypeError, "expecting a tuple");

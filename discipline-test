@@ -52,8 +52,14 @@ items = \
     )
 remaining, residue = make_weakrefs(items)
 sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
-result = discipline.makedict(items)
-remaining.add(WeakObj(result))
+try :
+    result = discipline.makedict(items, "case 1")
+except (ValueError, TypeError) as gotcha :
+    sys.stdout.write("Exception %s\n" % repr(gotcha))
+    result = None
+else :
+    remaining.add(WeakObj(result))
+#end try
 result = None
 items = None
 sys.stdout.write("after: len(weakset) = %d (should be %d)\n" % (len(remaining), residue))
@@ -62,15 +68,55 @@ sys.stdout.write("* Case 2\n")
 items = \
     (
         (WeakObj("key1b"), WeakObj("value1b")),
-        (WeakObj("key2b"), discipline.ExceptMe),
-        #(discipline.ExceptMe, WeakObj("value2b")),
-        (WeakObj("key3b"), WeakObj("value3b")),
+        (WeakObj("key2b"), WeakObj("value2b")),
     )
 remaining, residue = make_weakrefs(items)
 sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
 try :
-    result = discipline.makedict(items)
-except ValueError as gotcha :
+    result = discipline.makedict(items, None)
+except (ValueError, TypeError) as gotcha :
+    sys.stdout.write("Exception %s\n" % repr(gotcha))
+    result = None
+else :
+    remaining.add(WeakObj(result))
+#end try
+result = None
+items = None
+sys.stdout.write("after: len(weakset) = %d (should be %d)\n" % (len(remaining), residue))
+
+sys.stdout.write("* Case 3\n")
+items = \
+    (
+        (WeakObj("key1c"), WeakObj("value1c")),
+        (WeakObj("key2c"), discipline.ExceptMe),
+        #(discipline.ExceptMe, WeakObj("value2c")),
+        (WeakObj("key3c"), WeakObj("value3c")),
+    )
+remaining, residue = make_weakrefs(items)
+sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
+try :
+    result = discipline.makedict(items, "case 3")
+except (ValueError, TypeError) as gotcha :
+    sys.stdout.write("Exception %s\n" % repr(gotcha))
+    result = None
+else :
+    remaining.add(WeakObj(result))
+#end try
+result = None
+items = None
+sys.stdout.write("after: len(weakset) = %d (should be %d)\n" % (len(remaining), residue))
+
+sys.stdout.write("* Case 4\n")
+items = \
+    (
+        (WeakObj("key1d"), WeakObj("value1d")),
+        (WeakObj("key2d"), WeakObj("value2d"), WeakObj("extra2d")),
+    )
+remaining, residue = make_weakrefs(items)
+sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
+try :
+    result = discipline.makedict(items, "case 4")
+except (ValueError, TypeError) as gotcha :
     sys.stdout.write("Exception %s\n" % repr(gotcha))
     result = None
 else :
