@@ -118,12 +118,17 @@ static PyObject * discipline_makedict
     Top level
 */
 
+/* If your module defines custom objects like types, constants, exceptions etc,
+  it is convenient to collect them in tables so they can be added to the module
+  in a loop in the init routine (below). This reduces the repetitiveness of
+  the init code, including the error recovery. */
+
 struct type_entry
     {
 	    const char * name;
 	    PyTypeObject * typeobj;
     };
-static const struct type_entry types[] =
+static const struct type_entry types[] = /* all types defined in this module */
   {
     {"ExceptMe", &ExceptMe_type},
     ARRAY_END
@@ -135,6 +140,7 @@ struct string_constant_entry
         const char * value;
     };
 static const struct string_constant_entry string_constants[] =
+  /* all string constants defined in this module (all purely gratuitous) */
   {
     {"ONE", "one"},
     {"TWO", "two"},
