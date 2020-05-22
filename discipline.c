@@ -18,9 +18,6 @@
     Useful stuff
 */
 
-typedef unsigned int
-    uint;
-
 #define ARRAY_END {NULL}
   /* marks end of variable-length array of structs. All of these have
     a name field as the first field. */
@@ -74,7 +71,7 @@ static PyObject * discipline_makedict
         tempresult = PyDict_New();
         if (tempresult == NULL)
             break;
-        for (uint i = 0;;)
+        for (ssize_t i = 0;;)
           {
             if (i == nr_items)
                 break;
