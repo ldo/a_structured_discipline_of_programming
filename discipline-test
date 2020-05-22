@@ -1,0 +1,73 @@
+#!/usr/bin/python3
+#+
+# This script exercises the discipline.c extension module,
+# demonstrating the error-recovery techniques implemented
+# therein.
+#
+# Copyright 2020 by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# This code is licensed CC0
+# <https://creativecommons.org/publicdomain/zero/1.0/>; do with it
+# what you will.
+#-
+
+import sys
+import weakref
+import discipline
+
+class WeakStr :
+    "wrapper around str just so I can have weakrefs to instances."
+
+    def __init__(self, str) :
+        self.str = str
+    #end __init__
+
+    def __repr__(self) :
+        "make it look like a str."
+        return \
+            repr(self.str)
+    #end __repr__
+
+#end WeakStr
+
+def make_weakrefs(items) :
+    flattened = set([i[0] for i in items] + [i[1] for i in items])
+    residue = int(discipline.ExceptMe in flattened)
+    return \
+        weakref.WeakSet(flattened), residue
+#end make_weakrefs
+
+# Note: trying to refactor following in a loop doesn’t work--
+# references to objects don’t go away immediately!
+
+sys.stdout.write("* Case 1\n")
+items = \
+    (
+        (WeakStr("key1a"), WeakStr("value1a")),
+        (WeakStr("key2a"), WeakStr("value2a")),
+    )
+remaining, residue = make_weakrefs(items)
+sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
+result = discipline.makedict(items)
+result = None
+items = None
+sys.stdout.write("after: len(weakset) = %d (should be %d)\n" % (len(remaining), residue))
+
+sys.stdout.write("* Case 2\n")
+items = \
+    (
+        (WeakStr("key1b"), WeakStr("value1b")),
+        (WeakStr("key2b"), discipline.ExceptMe),
+        #(discipline.ExceptMe, WeakStr("value2b")),
+        (WeakStr("key3b"), WeakStr("value3b")),
+    )
+remaining, residue = make_weakrefs(items)
+sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
+try :
+    result = discipline.makedict(items)
+except ValueError as gotcha :
+    sys.stdout.write("Exception %s\n" % repr(gotcha))
+    result = None
+#end try
+result = None
+items = None
+sys.stdout.write("after: len(weakset) = %d (should be %d)\n" % (len(remaining), residue))
