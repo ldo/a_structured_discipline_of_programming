@@ -12,7 +12,7 @@ This project doesn’t (directly) address the last one, but it will look
 at the first two. My aim is to offer a basic programming pattern,
 consisting of three parts:
 
-  1: Initialize a pointer variable to NULL
+  1: Initialize a pointer variable to `NULL`
   2: Allocate memory for the pointer (this might fail)
   3: Correctly free the pointer memory, regardless of allocation success/failure
 
@@ -38,11 +38,11 @@ In more concrete terms, the code pattern looks like this:
 
 Assuming there are no gotos in the “...” parts, it should be clear
 that, regardless of what happens in those parts (provided they don’t
-free or reallocate obj), any memory allocated to obj will be correctly
+free or reallocate `obj`), any memory allocated to `obj` will be correctly
 freed.
 
-Key to this pattern is the fact that Py_XDECREF is a noop if it is
-passed a NULL pointer. This is also the semantics of the free(3)
+Key to this pattern is the fact that `Py_XDECREF` is a noop if it is
+passed a `NULL` pointer. This is also the semantics of the `free`(3)
 routine in the C standard library, and I recommend that any
 memory-disposal routine you create implement the same behaviour. It
 saves checking for unallocated storage in the cleanup code: just
@@ -106,7 +106,7 @@ Nested blocks:
     while (false);
     Py_XDECREF(obj1);
 
-Notice where the PyErr_Occurred() checks need to be done.
+Notice where the `PyErr_Occurred()` checks need to be done.
 Because there are no gotos, it is easy to satisfy yourself that
 every possible control path out of the inner structure will pass
 through the cleanup code on its way back into the outer structure.
