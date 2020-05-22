@@ -146,8 +146,10 @@ static const struct string_constant_entry string_constants[] =
 static PyMethodDef discipline_methods[] =
   {
     {"makedict", discipline_makedict, METH_VARARGS,
-        "makes a dictionary from a tuple of (key, value) pairs."
-        " Raises an exception if any key or value is ExceptMe."
+        "makedict(«tuple of pairs», «message»)\n"
+        "displays a message and makes a dictionary from a tuple"
+        " of (key, value) pairs. Raises an exception if any key"
+        " or value is ExceptMe."
     },
     ARRAY_END
   };
