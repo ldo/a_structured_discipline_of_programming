@@ -9,11 +9,11 @@
     what you will.
 */
 
+#include <stdbool.h>
 #include <iso646.h>
 #include <stdio.h>
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include <stdbool.h>
 
 /*
     Useful stuff
