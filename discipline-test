@@ -35,10 +35,14 @@ class WeakObj :
 #end WeakObj
 
 def make_weakrefs(items) :
-    flattened = set([i[0] for i in items] + [i[1] for i in items])
-    residue = int(discipline.ExceptMe in flattened)
+    flattened = \
+      (
+            set([i[0] for i in items if i[0] != discipline.ExceptMe]
+        +
+            [i[1] for i in items if i[1] != discipline.ExceptMe])
+      )
     return \
-        weakref.WeakSet(flattened), residue
+        weakref.WeakSet(flattened)
 #end make_weakrefs
 
 # Note: trying to refactor following repeated code into a loop doesn’t
@@ -50,7 +54,7 @@ items = \
         (WeakObj("key1a"), WeakObj("value1a")),
         (WeakObj("key2a"), WeakObj("value2a")),
     )
-remaining, residue = make_weakrefs(items)
+remaining = make_weakrefs(items)
 sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
 try :
     result = discipline.makedict(items, "case 1")
@@ -62,7 +66,7 @@ else :
 #end try
 result = None
 items = None
-sys.stdout.write("after: len(weakset) = %d (should be %d)\n" % (len(remaining), residue))
+sys.stdout.write("after: len(weakset) = %d\n" % len(remaining))
 
 sys.stdout.write("* Case 2\n")
 items = \
@@ -70,7 +74,7 @@ items = \
         (WeakObj("key1b"), WeakObj("value1b")),
         (WeakObj("key2b"), WeakObj("value2b")),
     )
-remaining, residue = make_weakrefs(items)
+remaining = make_weakrefs(items)
 sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
 try :
     result = discipline.makedict(items, None)
@@ -82,7 +86,7 @@ else :
 #end try
 result = None
 items = None
-sys.stdout.write("after: len(weakset) = %d (should be %d)\n" % (len(remaining), residue))
+sys.stdout.write("after: len(weakset) = %d\n" % len(remaining))
 
 sys.stdout.write("* Case 3\n")
 items = \
@@ -92,7 +96,7 @@ items = \
         #(discipline.ExceptMe, WeakObj("value2c")),
         (WeakObj("key3c"), WeakObj("value3c")),
     )
-remaining, residue = make_weakrefs(items)
+remaining = make_weakrefs(items)
 sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
 try :
     result = discipline.makedict(items, "case 3")
@@ -104,7 +108,7 @@ else :
 #end try
 result = None
 items = None
-sys.stdout.write("after: len(weakset) = %d (should be %d)\n" % (len(remaining), residue))
+sys.stdout.write("after: len(weakset) = %d\n" % len(remaining))
 
 sys.stdout.write("* Case 4\n")
 items = \
@@ -112,7 +116,7 @@ items = \
         (WeakObj("key1d"), WeakObj("value1d")),
         (WeakObj("key2d"), WeakObj("value2d"), WeakObj("extra2d")),
     )
-remaining, residue = make_weakrefs(items)
+remaining = make_weakrefs(items)
 sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
 try :
     result = discipline.makedict(items, "case 4")
@@ -124,4 +128,4 @@ else :
 #end try
 result = None
 items = None
-sys.stdout.write("after: len(weakset) = %d (should be %d)\n" % (len(remaining), residue))
+sys.stdout.write("after: len(weakset) = %d\n" % len(remaining))
