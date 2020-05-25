@@ -23,6 +23,13 @@
   /* marks end of variable-length array of structs. All of these have
     a name field as the first field. */
 
+/* informational types to indicate that a pointer is “borrowing” its
+  reference and doesn’t need to be disposed: */
+typedef char
+    br_char;
+typedef PyObject
+    br_PyObject;
+
 /*
     Types
 */
@@ -48,18 +55,11 @@ static PyObject * discipline_makedict
   {
     PyObject * result = NULL;
     PyObject * tempresult = NULL;
-    PyObject * items = NULL;
-    const char * msg = NULL;
+    br_PyObject * items;
+    const br_char * msg = NULL;
     do /*once*/
       {
         const bool parsed_ok = PyArg_ParseTuple(args, "Os", &items, &msg);
-      /* Grab references to possible partial results from PyArg_Parse routine
-        before checking for parse error.
-        Strictly, I don’t need to keep my own references to individual arguments,
-        since they are referenced by the argument list itself. But this way I have
-        fewer exceptions to the convention that every object pointer I maintain
-        should be reference-counted. */
-        Py_XINCREF(items);
         if (not parsed_ok)
             break;
         fprintf(stdout, "makedict says: “%s”\n", msg);
@@ -78,7 +78,7 @@ static PyObject * discipline_makedict
           {
             if (i == nr_items)
                 break;
-            PyObject * const item = PyTuple_GetItem(items, i);
+            br_PyObject * const item = PyTuple_GetItem(items, i);
             if (item == NULL)
                 break;
             if (not PyTuple_Check(item) or PyTuple_Size(item) != 2)
@@ -86,10 +86,10 @@ static PyObject * discipline_makedict
                 PyErr_SetString(PyExc_TypeError, "expecting a 2-tuple");
                 break;
               } /*if*/
-            PyObject * const first = PyTuple_GetItem(item, 0);
+            br_PyObject * const first = PyTuple_GetItem(item, 0);
             if (first == NULL)
                 break;
-            PyObject * const second = PyTuple_GetItem(item, 1);
+            br_PyObject * const second = PyTuple_GetItem(item, 1);
             if (second == NULL)
                 break;
             if (first == (PyObject *)&ExceptMe_type or second == (PyObject *)&ExceptMe_type)
@@ -108,7 +108,6 @@ static PyObject * discipline_makedict
         tempresult = NULL; /* so I don’t dispose of it yet */
       }
     while (false);
-    Py_XDECREF(items);
     Py_XDECREF(tempresult);
     return
         result;
