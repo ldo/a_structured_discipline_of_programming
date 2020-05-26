@@ -19,9 +19,12 @@
     Useful stuff
 */
 
-#define ARRAY_END {NULL}
-  /* marks end of variable-length array of structs. All of these have
-    a name field as the first field. */
+#define END_STRUCT_LIST {0}
+  /* put at end of variable-length C arrays of structs; any new elements must
+    be added before this. */
+#define END_PTR_LIST 0
+  /* put at end of variable-length C arrays of pointers; any new elements must
+    be added before this. */
 
 /* informational types to indicate that a pointer is “borrowing” its
   reference and doesn’t need to be disposed: */
@@ -122,15 +125,10 @@ static PyObject * discipline_makedict
   in a loop in the init routine (below). This reduces the repetitiveness of
   the init code, including the error recovery. */
 
-struct type_entry
-    {
-	    const char * name;
-	    PyTypeObject * typeobj;
-    };
-static const struct type_entry types[] = /* all types defined in this module */
+static PyTypeObject * types[] = /* all types defined in this module */
   {
-    {"ExceptMe", &ExceptMe_type},
-    ARRAY_END
+    &ExceptMe_type,
+    END_PTR_LIST
   };
 
 struct string_constant_entry
@@ -143,7 +141,7 @@ static const struct string_constant_entry string_constants[] =
   {
     {"ONE", "one"},
     {"TWO", "two"},
-    ARRAY_END
+    END_STRUCT_LIST
   };
 
 static PyMethodDef discipline_methods[] =
@@ -154,7 +152,7 @@ static PyMethodDef discipline_methods[] =
         " of (key, value) pairs. Raises an exception if any key"
         " or value is ExceptMe."
     },
-    ARRAY_END
+    END_STRUCT_LIST
   };
 
 static PyModuleDef discipline_module =
@@ -175,13 +173,13 @@ PyMODINIT_FUNC PyInit_discipline(void)
         modu = PyModule_Create(&discipline_module);
         if (PyErr_Occurred())
             break;
-        for (const struct type_entry *e = types;;)
+        for (PyTypeObject ** e = types;;)
           {
-            if (e->name == NULL)
+            if (*e == NULL)
                 break;
-            if (PyType_Ready(e->typeobj) < 0)
+            if (PyType_Ready(*e) < 0)
                 break;
-            if (PyModule_AddObject(modu, e->name, (PyObject *)e->typeobj) < 0)
+            if (PyModule_AddObject(modu, (**e).tp_name, (PyObject *)*e) < 0)
                 break;
             ++e;
           } /*for*/
