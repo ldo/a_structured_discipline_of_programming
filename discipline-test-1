@@ -90,7 +90,7 @@ for items in \
     casenr += 1
     sys.stdout.write("* Case %d\n" % casenr)
     items, remaining = make_refs(items)
-    sys.stdout.write("before: len(weakset) = %d\n" % len(remaining))
+    sys.stdout.write("nr objects before call = %d\n" % len(remaining))
     try :
         result = makedict(items, "case %d" % casenr)
     except (ValueError, TypeError) as gotcha :
@@ -99,7 +99,9 @@ for items in \
     else :
         remaining.add(WeakObj(result))
     #end try
-    result = None
+    sys.stdout.write("nr remaining objects after call = %d" % len(remaining))
     items = None
-    sys.stdout.write("after: len(weakset) = %d\n" % len(remaining))
+    sys.stdout.write(", after nulling items = %d" % len(remaining))
+    result = None
+    sys.stdout.write(", after nulling result = %d\n" % len(remaining))
 #end for
