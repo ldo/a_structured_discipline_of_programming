@@ -1,0 +1,41 @@
+#!/usr/bin/python3
+#+
+# This script exercises the discipline.c extension module,
+# demonstrating the error-recovery techniques implemented therein.
+# The exercise here involves calling the factorize routine,
+# which constructs a tuple of pairs of prime factors and powers
+# for a given integer. For example, factorize(12) returns ((2, 2), (3, 1))
+# indicating that 12 = 2 ** 2 × 3 ** 1. The catch is that if 5
+# occurs as a factor or a power for a given composite argument,
+# then the ValueError exception is raised instead of returning
+# a value.
+#
+# Copyright 2020 by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# This code is licensed CC0
+# <https://creativecommons.org/publicdomain/zero/1.0/>; do with it
+# what you will.
+#-
+
+import sys
+# built from accompanying discipline.c
+from discipline import \
+    factorize
+
+for n in \
+    (
+        12,
+        1,
+        243,
+        1728,
+        30,
+        10101,
+    ) \
+:
+    try :
+        factors = factorize(n)
+    except ValueError as gotcha :
+        sys.stdout.write("Exception %s trying to factorize %d\n" % (repr(gotcha), n))
+    else :
+        sys.stdout.write("factorize(%d) = %s\n" % (n, repr(factors)))
+    #end try
+#end for

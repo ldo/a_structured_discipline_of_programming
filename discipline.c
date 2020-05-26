@@ -10,6 +10,7 @@
 */
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <iso646.h>
 #include <stdio.h>
 #define PY_SSIZE_T_CLEAN
@@ -116,6 +117,120 @@ static PyObject * discipline_makedict
         result;
   } /*discipline_makedict*/
 
+static PyObject * discipline_factorize
+  (
+    PyObject * self,
+    PyObject * args
+  )
+  {
+    PyObject * result = NULL;
+    PyObject * tempresult = NULL;
+    uint64_t n;
+    ssize_t nr_allocated, nr_used;
+    const ssize_t allocation_step = 10;
+      /* something convenient to reduce nr of tuple resize operations */
+    do /*once*/
+      {
+          {
+            br_PyObject * nobj;
+          /* Note that “K” specifier for PyArg_ParseTuple does not do overflow checking */
+            if (not PyArg_ParseTuple(args, "O", &nobj))
+                break;
+            n = PyLong_AsUnsignedLongLong(nobj);
+            if (PyErr_Occurred())
+                break;
+          }
+        if (n < 2)
+          {
+            PyErr_SetString(PyExc_ValueError, "cannot factorize one or zero");
+            break;
+          } /*if*/
+        nr_allocated = allocation_step;
+        tempresult = PyTuple_New(nr_allocated);
+        if (tempresult == NULL)
+            break;
+        nr_used = 0;
+          {
+            uint64_t step = 1;
+            for (uint64_t factor = 2;;)
+              {
+                if (n % factor == 0)
+                  {
+                    PyObject * factorelt = NULL;
+                    PyObject * factorobj = NULL;
+                    PyObject * powerobj = NULL;
+                    do /*once*/
+                      {
+                        factorelt = PyTuple_New(2);
+                        if (factorelt == NULL)
+                            break;
+                        uint64_t power = 1;
+                        n /= factor;
+                        while (n % factor == 0)
+                          {
+                            ++power;
+                            n /= factor;
+                          } /*while*/
+                        if (factor == 5)
+                          {
+                            PyErr_SetString(PyExc_ValueError, "Aiee! Unlucky factor 5 found!");
+                            break;
+                          } /*if*/
+                        if (power == 5)
+                          {
+                            PyErr_SetString(PyExc_ValueError, "Aiee! Unlucky power 5 found!");
+                            break;
+                          } /*if*/
+                        factorobj = PyLong_FromUnsignedLongLong(factor);
+                        if (factorobj == NULL)
+                            break;
+                        powerobj = PyLong_FromUnsignedLongLong(power);
+                        if (powerobj == NULL)
+                            break;
+                        PyTuple_SET_ITEM(factorelt, 0, factorobj);
+                        PyTuple_SET_ITEM(factorelt, 1, powerobj);
+                        factorobj = powerobj = NULL; /* ownership has passed to factorelt */
+                        if (nr_used == nr_allocated)
+                          {
+                          /* need more room in result tuple */
+                            nr_allocated += allocation_step;
+                            if (_PyTuple_Resize(&tempresult, nr_allocated) != 0)
+                                break;
+                          } /*if*/
+                      /* all done */
+                        PyTuple_SET_ITEM(tempresult, nr_used, factorelt);
+                        factorelt = NULL; /* ownership has passed to tempresult */
+                        ++nr_used;
+                      }
+                    while (false);
+                    Py_XDECREF(factorobj);
+                    Py_XDECREF(powerobj);
+                    Py_XDECREF(factorelt);
+                    if (PyErr_Occurred())
+                        break;
+                  }
+                else if (factor * factor > n)
+                  {
+                    break;
+                  } /*if*/
+                factor += step;
+                step = 2;
+              } /*for*/
+            if (PyErr_Occurred())
+                break;
+          }
+        if (_PyTuple_Resize(&tempresult, nr_used) != 0)
+            break;
+      /* all done */
+        result = tempresult;
+        tempresult = NULL; /* so I don’t dispose of it yet */
+      }
+    while (false);
+    Py_XDECREF(tempresult);
+    return
+        result;
+  } /*discipline_factorize*/
+
 /*
     Top level
 */
@@ -147,10 +262,17 @@ static const struct string_constant_entry string_constants[] =
 static PyMethodDef discipline_methods[] =
   {
     {"makedict", discipline_makedict, METH_VARARGS,
-        "makedict(«tuple of pairs», «message»)\n"
+        "makedict(«tuple of pairs», «message»)\n\n"
         "displays a message and makes a dictionary from a tuple"
-        " of (key, value) pairs. Raises an exception if any key"
-        " or value is ExceptMe."
+        " of (key, value) pairs. Raises a ValueError exception if" \
+        " any key or value is ExceptMe."
+    },
+    {"factorize", discipline_factorize, METH_VARARGS,
+        "factorize(«n»)\n\n"
+        "returns a tuple of integer pairs («i», «r») representing the" \
+        "prime factors of positive integer «n», where «i» is a prime" \
+        " number and «r» is the number of times «i» occurs as a factor" \
+        " of «n». Raises a ValueError exception if any «i» or «r» equals 5."
     },
     END_STRUCT_LIST
   };
