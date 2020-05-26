@@ -154,6 +154,8 @@ static PyObject * discipline_factorize
             uint64_t step = 1;
             for (uint64_t factor = 2;;)
               {
+                if (factor > n)
+                    break;
                 if (n % factor == 0)
                   {
                     PyObject * factorelt = NULL;
@@ -208,10 +210,6 @@ static PyObject * discipline_factorize
                     Py_XDECREF(factorelt);
                     if (PyErr_Occurred())
                         break;
-                  }
-                else if (factor * factor > n)
-                  {
-                    break;
                   } /*if*/
                 factor += step;
                 step = 2;
