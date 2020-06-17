@@ -36,10 +36,11 @@ In more concrete terms, the code pattern looks like this:
     while (false);
     Py_XDECREF(obj); /* step 3 */
 
-Assuming there are no gotos in the “...” parts (or shenanigans like
-`setjmp`(3)/`longjmp`(3)), it should be clear that, regardless of what
-happens in those parts (provided they don’t free or reallocate `obj`),
-any memory allocated to `obj` will be correctly freed.
+Assuming there are no `goto`s in the “...” parts (or `return`
+statements, or shenanigans like `setjmp`(3)/`longjmp`(3)), it should
+be clear that, regardless of what happens in those parts (provided
+they don’t free or reallocate `obj`), any memory allocated to `obj`
+will be correctly freed.
 
 Key to this pattern is the fact that `Py_XDECREF` is a noop (and
 raises no error) if it is passed a `NULL` pointer. This is also the
@@ -60,7 +61,7 @@ There is an old concept called a “Nassi-Shneiderman diagram”. This is
 a representation of part of your program code as a block that can be
 nested in other such blocks, or concatenated with other blocks.
 However, the nesting and concatenating only works if there are no
-gotos present.
+`goto`s or nested `return`s present.
 
 The above basic structure scales easily. For example, coping with
 multiple objects needing allocating:
@@ -114,7 +115,7 @@ Nested blocks:
     Py_XDECREF(obj1);
 
 Notice where the `PyErr_Occurred()` checks need to be done.
-Because there are no gotos, it is easy to satisfy yourself that
+Because there are no `goto`s, it is easy to satisfy yourself that
 every possible control path out of the inner structure will pass
 through the cleanup code on its way back into the outer structure.
 
@@ -156,8 +157,11 @@ happens only on error (in which case the function returns NULL, as
 expected by Python); if no error occurs, then the result object is not
 disposed, but is passed back to Python instead.
 
+Also note that each function has one, and only one, `return` statement,
+which comes at the end.
+
 A more complex situation occurs with allocation inside a loop. If you
-thought you could easily rewrite the previous cases with gotos, have a
+thought you could easily rewrite the previous cases with `goto`s, have a
 careful look at this. Example: process items in an input tuple, and
 create entries in an output dict.
 
@@ -233,4 +237,4 @@ Most of these situations are illustrated further by actual, working
 code in the accompanying example.
 
 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
-2020 May 23
+2020 June 17
