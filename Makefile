@@ -1,11 +1,9 @@
 # Build discipline extension module.
 
-# may need to fix PYTHONVER as needed for newer/older Python
-PYTHONVER=python3.8
-CFLAGS=-g -I/usr/include/${PYTHONVER} -fPIC -Wall -Wno-parentheses
+CFLAGS=-g $(shell python3-config --includes) -fPIC -Wall -Wno-parentheses
 
 discipline.so : discipline.o
-	$(CC) $^ -L${PYTHONVER}/config -l${PYTHONVER} -shared -o $@
+	$(CC) $^ $(shell python3-config --ldflags) -shared -o $@
 
 discipline.o : discipline.c
 
