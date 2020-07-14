@@ -1,5 +1,9 @@
 # A Structured Discipline Of Programming #
 
+> There are two ways to write error-free programs; only the third one works.
+
+>> -- Alan Perlis
+
 Programming is tricky in many ways: one of them is correctly managing
 dynamic memory allocation. We frequently hear of various kinds of
 memory-related bugs in code, such as
@@ -237,4 +241,4 @@ Most of these situations are illustrated further by actual, working
 code in the accompanying example.
 
 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
-2020 June 17
+2020 July 14
