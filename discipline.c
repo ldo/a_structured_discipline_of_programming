@@ -262,14 +262,14 @@ static PyMethodDef discipline_methods[] =
     {"makedict", discipline_makedict, METH_VARARGS,
         "makedict(«tuple of pairs», «message»)\n\n"
         "displays a message and makes a dictionary from a tuple"
-        " of (key, value) pairs. Raises a ValueError exception if" \
+        " of (key, value) pairs. Raises a ValueError exception if"
         " any key or value is ExceptMe."
     },
     {"factorize", discipline_factorize, METH_VARARGS,
         "factorize(«n»)\n\n"
-        "returns a tuple of integer pairs («i», «r») representing the" \
-        "prime factors of positive integer «n», where «i» is a prime" \
-        " number and «r» is the number of times «i» occurs as a factor" \
+        "returns a tuple of integer pairs («i», «r») representing the"
+        "prime factors of positive integer «n», where «i» is a prime"
+        " number and «r» is the number of times «i» occurs as a factor"
         " of «n». Raises a ValueError exception if any «i» or «r» equals 5."
     },
     END_STRUCT_LIST
